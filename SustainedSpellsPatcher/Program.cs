@@ -16,8 +16,7 @@ namespace SustainedSpellsPatcher
 
         public bool replaceSpells = true;
 
-        [SettingName("Blacklisted FormKeys")]
-        public List<string> blacklist = new();
+        public List<IFormLinkGetter<ISpellGetter>> blacklist = new();
 
         //public int maxSummons = 2;;
     }
@@ -43,14 +42,14 @@ namespace SustainedSpellsPatcher
         {
             //Your code here!
 
-            List<string> blacklist = Settings.Value.blacklist;
+            List<IFormLinkGetter<ISpellGetter>> blacklist = Settings.Value.blacklist;
             if (!state.LoadOrder.ModExists(new ModKey("MysticismMagic", ModType.Plugin), true))
             {
-                blacklist.Add("07E5D5:Skyrim.esm"); // Flame Thrall
-                blacklist.Add("07E5D6:Skyrim.esm"); // Frost Thrall
-                blacklist.Add("07E5D7:Skyrim.esm"); // Storm Thrall
+                blacklist.Add(FormKey.Factory("07E5D5:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Flame Thrall
+                blacklist.Add(FormKey.Factory("07E5D6:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Frost Thrall
+                blacklist.Add(FormKey.Factory("07E5D7:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Storm Thrall
             }
-            blacklist.Add("07E8DF:Skyrim.esm"); // Dead Thrall
+            blacklist.Add(FormKey.Factory("07E8DF:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Dead Thrall
 
             FormList drainSpellsListConjuration = new(state.PatchMod, "SustainedSpellsDrainListConjuration");
             FormList baseSpellsListConjuration = new(state.PatchMod, "SustainedSpellsBaseListConjuration");
@@ -201,7 +200,7 @@ namespace SustainedSpellsPatcher
                 if (bookGetter.Teaches is BookSpell spellGetter)
                 {
                     var spell = spellGetter.Spell.Resolve(state.LinkCache);
-                    if (blacklist.Contains(spell.FormKey.ToString())) continue;
+                    if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstEffect = spell.Effects[0].BaseEffect.Resolve(state.LinkCache);
                     if (firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate)
                     {
