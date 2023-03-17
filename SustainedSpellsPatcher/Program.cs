@@ -19,6 +19,8 @@ namespace SustainedSpellsPatcher
         [SettingName("Blacklisted FormKeys")]
         public List<string> blacklist = new();
 
+        public List<IFormLinkGetter<ISpellGetter>> blacklist2 = new();
+
         //public int maxSummons = 2;;
     }
 

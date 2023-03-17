@@ -1,6 +1,6 @@
 {
   "Nickname": "SustainedSpellsPatcher",
-  "Visibility": "Exclude",
+  "Visibility": "IncludeButHide",
   "OneLineDescription": "",
   "LongDescription": "",
   "PreferredAutoVersioning": "Default",
