@@ -18,6 +18,8 @@ namespace SustainedSpellsPatcher
 
         [SettingName("Blacklisted FormKeys")]
         public List<string> blacklist = new();
+
+        //public int maxSummons = 2;;
     }
 
     public class Program
@@ -53,6 +55,7 @@ namespace SustainedSpellsPatcher
             FormList drainSpellsListConjuration = new(state.PatchMod, "SustainedSpellsDrainListConjuration");
             FormList baseSpellsListConjuration = new(state.PatchMod, "SustainedSpellsBaseListConjuration");
             FormList lastingSpellsListConjuration = new(state.PatchMod, "SustainedSpellsEffectListConjuration");
+            FormList lastingSpellTrackerListConjuration = new(state.PatchMod, "SustainedSpellsTrackerListConjuration");
 
             foreach (var magicEffectGetter in state.LoadOrder.PriorityOrder.MagicEffect().WinningOverrides())
             {
@@ -125,6 +128,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsEffectList",
                                         Object = lastingSpellsListConjuration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellTrackerListConjuration.ToLink()
                                     }
                                 }
                             });
@@ -157,6 +166,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsEffectList",
                                         Object = lastingSpellsListConjuration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellTrackerListConjuration.ToLink()
                                     }
                                 }
                             });
@@ -198,8 +213,8 @@ namespace SustainedSpellsPatcher
                         } else
                         {
                             lastingSpell = spell.Duplicate(state.PatchMod.GetNextFormKey());
+                            lastingSpell.EditorID = "SustainedSpell_" + lastingSpell.EditorID;
                         }
-                        lastingSpell.EditorID = "SustainedSpell_" + lastingSpell.EditorID;
                         lastingSpell.Effects.Clear();
                         lastingSpell.Flags |= SpellDataFlag.NoDualCastModification;
                         if (!Settings.Value.replaceSpells) lastingSpell.Name = "Lasting " + lastingSpell;
@@ -207,8 +222,12 @@ namespace SustainedSpellsPatcher
                         lastingSpellsListConjuration.Items.Add(lastingSpell);
                         baseSpellsListConjuration.Items.Add(spell);
 
-                        MiscItem tracker = new (state.PatchMod, "SustainedSpellTracker_" + lastingSpell.EditorID);
+                        MiscItem tracker = new(state.PatchMod, "SustainedSpellTracker_" + lastingSpell.EditorID)
+                        {
+                            MajorFlags = MiscItem.MajorFlag.NonPlayable
+                        };
                         state.PatchMod.MiscItems.Set(tracker);
+                        lastingSpellTrackerListConjuration.Items.Add(tracker);
 
                         string lastingSpellDescription = " Caster will have reduced magicka while this spell is active.";
                         float longestChargeTime = 0;
@@ -220,6 +239,7 @@ namespace SustainedSpellsPatcher
                                 ActorValue = ActorValue.Magicka,
                                 Type = MagicEffectArchetype.TypeEnum.ValueModifier
                             },
+                            MenuDisplayObject = spell.MenuDisplayObject.AsNullable(),
                             CastType = CastType.ConstantEffect,
                             CastingSoundLevel = SoundLevel.Silent,
                             Flags = drainEffectFlags,
@@ -229,7 +249,6 @@ namespace SustainedSpellsPatcher
                         Spell drainSpell = new(state.PatchMod)
                         {
                             EditorID = "SustainedSpellDrain_" + spell.EditorID,
-                            MenuDisplayObject = spell.MenuDisplayObject.AsNullable(),
                             Type = SpellType.Ability,
                             CastType = CastType.ConstantEffect,
                             TargetType = TargetType.Self,
@@ -343,7 +362,7 @@ namespace SustainedSpellsPatcher
                             lastingSpell.Effects.Add(lastingSpellEffect);
                         }
 
-                        var lastingSpellDescriptionEffect = new MagicEffect(state.PatchMod, "SustainedSpellDescription_" + lastingSpell.EditorID)
+                        var lastingSpellDescriptionEffect = new MagicEffect(state.PatchMod, "SustainedSpellDescription_" + spell.EditorID)
                         {
                             Description = lastingSpellDescription,
                             Archetype = new MagicEffectArchetype()
@@ -400,6 +419,7 @@ namespace SustainedSpellsPatcher
             state.PatchMod.FormLists.Set(drainSpellsListConjuration);
             state.PatchMod.FormLists.Set(baseSpellsListConjuration);
             state.PatchMod.FormLists.Set(lastingSpellsListConjuration);
+            state.PatchMod.FormLists.Set(lastingSpellTrackerListConjuration);
         }
     }
 }
