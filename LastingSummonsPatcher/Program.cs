@@ -4,7 +4,6 @@ using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Plugins;
 using DynamicData;
 using Noggog;
-using CommandLine;
 using Mutagen.Bethesda.WPF.Reflection.Attributes;
 
 namespace LastingSummonsPatcher
@@ -106,7 +105,7 @@ namespace LastingSummonsPatcher
                             magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
                             {
                                 Flags = ScriptEntry.Flag.Local,
-                                Name = "SustainedSummonsRecalculateCosts",
+                                Name = "SustainedSpellsRecalculateCosts",
                                 Properties = new()
                                 {
                                     new ScriptObjectProperty()
@@ -138,7 +137,7 @@ namespace LastingSummonsPatcher
                             magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
                             {
                                 Flags = ScriptEntry.Flag.Local,
-                                Name = "SustainedSummonsRecalculateCosts",
+                                Name = "SustainedSpellsRecalculateCosts",
                                 Properties = new()
                                 {
                                     new ScriptObjectProperty()
@@ -192,23 +191,27 @@ namespace LastingSummonsPatcher
                     if (firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate)
                     {
                         Console.WriteLine(spell.EditorID);
-                        float longestChargeTime = 0;
-                        var lastingSpell = spell.Duplicate(state.PatchMod.GetNextFormKey());
+                        Spell lastingSpell;
+                        if (Settings.Value.replaceSpells)
+                        {
+                            lastingSpell = spell.DeepCopy();
+                        } else
+                        {
+                            lastingSpell = spell.Duplicate(state.PatchMod.GetNextFormKey());
+                        }
                         lastingSpell.EditorID = "SustainedSpell_" + lastingSpell.EditorID;
                         lastingSpell.Effects.Clear();
                         lastingSpell.Flags |= SpellDataFlag.NoDualCastModification;
-                        lastingSpell.Keywords ??= new();
-                        lastingSpell.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
+                        if (!Settings.Value.replaceSpells) lastingSpell.Name = "Lasting " + lastingSpell;
 
                         lastingSpellsListConjuration.Items.Add(lastingSpell);
                         baseSpellsListConjuration.Items.Add(spell);
 
-                        /*
-                        var global = new GlobalShort(state.PatchMod, "SustainedSpellGlobal_" + lastingSpell.EditorID);
-                        state.PatchMod.Globals.Set(global);
-                        */
+                        MiscItem tracker = new (state.PatchMod, "SustainedSpellTracker_" + lastingSpell.EditorID);
+                        state.PatchMod.MiscItems.Set(tracker);
 
                         string lastingSpellDescription = " Caster will have reduced magicka while this spell is active.";
+                        float longestChargeTime = 0;
 
                         MagicEffect drainEffect = new(state.PatchMod)
                         {
@@ -232,40 +235,32 @@ namespace LastingSummonsPatcher
                             TargetType = TargetType.Self,
                             Flags = SpellDataFlag.NoAbsorbOrReflect,
                             Name = lastingSpell.Name,
-                            /*
-                            Keywords = new()
-                            {
-                                sustainedSpellKeyword
-                            },
-                            */
                             Effects = new()
                             {
                                 new Effect()
                                 {
                                     BaseEffect = drainEffect.ToNullableLink<IMagicEffectGetter>(),
                                     Data = new()
-                                }
-                                /*
+                                },
                                 new Effect()
                                 {
                                     BaseEffect = drainEffect.ToNullableLink<IMagicEffectGetter>(),
                                     Data = new(),
-                                    Conditions = new Noggog.ExtendedList<Condition>()
+                                    Conditions = new ExtendedList<Condition>()
                                     {
                                         new ConditionFloat()
                                         {
-                                            CompareOperator = CompareOperator.EqualTo,
+                                            CompareOperator = CompareOperator.GreaterThanOrEqualTo,
                                             ComparisonValue = 2,
                                             Data = new FunctionConditionData()
                                             {
-                                                ParameterOneRecord = global.ToLink(),
-                                                Function = Condition.Function.GetGlobalValue,
-                                                RunOnType = Condition.RunOnType.Subject
+                                                RunOnType = Condition.RunOnType.Subject,
+                                                Function = Condition.Function.GetItemCount,
+                                                ParameterOneRecord = tracker.ToLink()
                                             }
                                         }
                                     }
                                 }
-                                */
                             }
                         };
                         state.PatchMod.Spells.Set(drainSpell);
@@ -293,7 +288,8 @@ namespace LastingSummonsPatcher
                                 lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
                                 lastingMagicEffect.EditorID = "SustainedSpellEffect_" + lastingMagicEffect.EditorID;
                                 lastingMagicEffect.Flags |= MagicEffect.Flag.HideInUI;
-                                //lastingMagicEffect.BaseCost = 0;
+                                lastingMagicEffect.Keywords ??= new();
+                                lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
                                 lastingMagicEffect.VirtualMachineAdapter ??= new();
                                 lastingMagicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
                                 {
@@ -319,26 +315,20 @@ namespace LastingSummonsPatcher
                                             Flags = ScriptProperty.Flag.Edited,
                                             Name = "togglespelleffect",
                                             Object = lastingMagicEffect.ToLink()
+                                        },
+                                        new ScriptObjectProperty()
+                                        {
+                                            Flags = ScriptProperty.Flag.Edited,
+                                            Name = "spelltracker",
+                                            Object = tracker.ToLink()
+                                        },
+                                        new ScriptIntProperty()
+                                        {
+                                            Flags = ScriptProperty.Flag.Edited,
+                                            Name = "Skill",
+                                            Data = 19
                                         }
                                         /*
-                                        new ScriptObjectProperty()
-                                        {
-                                            Flags = ScriptProperty.Flag.Edited,
-                                            Name = "togglespellglobal",
-                                            Object = global.ToLink<Global>()
-                                        },
-                                        new ScriptObjectProperty()
-                                        {
-                                            Flags = ScriptProperty.Flag.Edited,
-                                            Name = "TwinSouls",
-                                            Object = FormKey.Factory("0D5F1C:Skyrim.esm").ToLink<Perk>()
-                                        },
-                                        new ScriptFloatProperty()
-                                        {
-                                            Flags = ScriptProperty.Flag.Edited,
-                                            Name = "spellxpmagnitude",
-                                            Data = magicEffect.BaseCost * magicEffect.SkillUsageMultiplier
-                                        },
                                         new ScriptObjectProperty()
                                         {
                                             Flags = ScriptProperty.Flag.Edited,
@@ -379,20 +369,13 @@ namespace LastingSummonsPatcher
                             lastingSpell.Flags |= SpellDataFlag.ManualCostCalc;
                             lastingSpell.ChargeTime = longestChargeTime;
                         }
-                        //lastingSpell.BaseCost = 0;
                         state.PatchMod.Spells.Set(lastingSpell);
                         state.PatchMod.MagicEffects.Set(drainEffect);
                         state.PatchMod.MagicEffects.Set(lastingSpellDescriptionEffect);
 
-                        var book = bookGetter.DeepCopy();
-                        if (Settings.Value.replaceSpells)
+                        if (!Settings.Value.replaceSpells)
                         {
-                            book.Teaches = new BookSpell()
-                            {
-                                Spell = lastingSpell.ToLink()
-                            };
-                        } else
-                        {
+                            var book = bookGetter.DeepCopy();
                             book.VirtualMachineAdapter ??= new();
                             book.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
                             {
@@ -408,41 +391,8 @@ namespace LastingSummonsPatcher
                                     }
                                 }
                             });
+                            state.PatchMod.Books.Set(book);
                         }
-                        state.PatchMod.Books.Set(book);
-                    }
-                }
-            }
-
-            if (Settings.Value.replaceSpells)
-            {
-                var mainQuest = state.LinkCache.Resolve<IQuestGetter>(FormKey.Factory("03372B:Skyrim.esm")).DeepCopy();
-                if (mainQuest.VirtualMachineAdapter != null)
-                {
-                    foreach(var script in mainQuest.VirtualMachineAdapter.Scripts)
-                    {
-                        if (script.Name == "MQ101QuestScript")
-                        {
-                            foreach(var property in script.Properties)
-                            {
-                                if (property.Name == "ConjureFamiliar")
-                                {
-                                    foreach(var spell in baseSpellsListConjuration.Items)
-                                    {
-                                        if (spell.FormKey == FormKey.Factory("0640B6:Skyrim.esm"))
-                                        {
-                                            var objectProperty = (property as ScriptObjectProperty);
-                                            if (objectProperty != null)
-                                            {
-                                                objectProperty.Object = (IFormLink<ISkyrimMajorRecordGetter>)lastingSpellsListConjuration.Items[baseSpellsListConjuration.Items.IndexOf(spell)];
-                                                state.PatchMod.Quests.Set(mainQuest);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                     }
                 }
             }
