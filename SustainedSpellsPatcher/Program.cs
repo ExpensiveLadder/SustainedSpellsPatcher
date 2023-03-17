@@ -18,6 +18,8 @@ namespace SustainedSpellsPatcher
 
         public List<IFormLinkGetter<ISpellGetter>> blacklist = new();
 
+        public List<IFormLinkGetter<ISpellGetter>> blacklist2 = new();
+
         //public int maxSummons = 2;;
     }
 
