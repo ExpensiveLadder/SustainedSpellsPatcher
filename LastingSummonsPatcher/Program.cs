@@ -6,7 +6,7 @@ using DynamicData;
 using Noggog;
 using Mutagen.Bethesda.WPF.Reflection.Attributes;
 
-namespace LastingSummonsPatcher
+namespace SustainedSpellsPatcher
 {
     public class TestSettings
     {
