@@ -614,11 +614,11 @@ namespace SustainedSpellsPatcher
                                 {
                                     if (description.StartsWith("For <dur> seconds, "))
                                     {
-                                        lastingSpellDescription = CapatalizeFirst(description.Replace("For <dur> seconds, ", "")).Replace("<mag>", spellEffect.Data?.Magnitude.ToInt().ToString()) + lastingSpellDescription;
+                                        lastingSpellDescription = CapatalizeFirst(description.Replace("For <dur> seconds, ", "")).Replace("<mag>", "<" + spellEffect.Data?.Magnitude.ToInt().ToString()) + ">" + lastingSpellDescription;
                                     }
                                     else
                                     {
-                                        lastingSpellDescription = description.Replace(" for <dur> seconds", "").Replace("<mag>", spellEffect.Data?.Magnitude.ToInt().ToString()) + lastingSpellDescription;
+                                        lastingSpellDescription = description.Replace(" for <dur> seconds", "").Replace("<mag>", "<" + spellEffect.Data?.Magnitude.ToInt().ToString()) + ">" + lastingSpellDescription;
                                     }
                                 }
                             }
