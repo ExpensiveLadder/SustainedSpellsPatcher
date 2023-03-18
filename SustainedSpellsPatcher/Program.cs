@@ -4,7 +4,6 @@ using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Plugins;
 using DynamicData;
 using Noggog;
-using Mutagen.Bethesda.WPF.Reflection.Attributes;
 
 namespace SustainedSpellsPatcher
 {
@@ -13,6 +12,10 @@ namespace SustainedSpellsPatcher
         //public double InitialCostMultiplier = 0.0;
 
         //public double LastingCostMultiplier = 1.0;
+
+        public bool enableSummonSpells = true;
+        public bool enableReanimateSpells = true;
+        public bool enableBoundWeaponSpells = true;
 
         public bool replaceSpells = true;
 
@@ -202,7 +205,7 @@ namespace SustainedSpellsPatcher
                     var spell = spellGetter.Spell.Resolve(state.LinkCache);
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstEffect = spell.Effects[0].BaseEffect.Resolve(state.LinkCache);
-                    if (firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate)
+                    if ((Settings.Value.enableSummonSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature) || (Settings.Value.enableReanimateSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate) || (Settings.Value.enableBoundWeaponSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Bound))
                     {
                         Console.WriteLine(spell.EditorID);
                         Spell lastingSpell;
@@ -300,7 +303,7 @@ namespace SustainedSpellsPatcher
                                     lastingSpellDescription = description.Replace(" for <dur> seconds", "") + lastingSpellDescription;
                                 }
                             }
-                            if (magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate)
+                            if (magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate || magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Bound)
                             {
                                 var lastingMagicEffect = magicEffect.Duplicate(state.PatchMod.GetNextFormKey());
                                 lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
