@@ -16,6 +16,7 @@ namespace SustainedSpellsPatcher
         public bool enableSummonSpells = true;
         public bool enableReanimateSpells = true;
         public bool enableBoundWeaponSpells = true;
+        public bool enableCloakSpells = true;
 
         public bool replaceSpells = true;
 
@@ -27,6 +28,10 @@ namespace SustainedSpellsPatcher
     public class Program
     {
         static Lazy<TestSettings> Settings = null!;
+        public static string CapatalizeFirst(string text)
+        {
+            return string.Concat(text[0].ToString().ToUpper(), text.AsSpan(1));
+        }
 
         public static async Task<int> Main(string[] args)
         {
@@ -58,6 +63,23 @@ namespace SustainedSpellsPatcher
             FormList baseSpellsListConjuration = new(state.PatchMod, "SustainedSpellsBaseListConjuration");
             FormList lastingSpellsListConjuration = new(state.PatchMod, "SustainedSpellsEffectListConjuration");
             FormList lastingSpellTrackerListConjuration = new(state.PatchMod, "SustainedSpellsTrackerListConjuration");
+            FormList drainSpellsListDestruction = new(state.PatchMod, "SustainedSpellsDrainListDestruction");
+            FormList baseSpellsListDestruction = new(state.PatchMod, "SustainedSpellsBaseListDestruction");
+            FormList lastingSpellsListDestruction = new(state.PatchMod, "SustainedSpellsEffectListDestruction");
+            FormList lastingSpellTrackerListDestruction = new(state.PatchMod, "SustainedSpellsTrackerListDestruction");
+            FormList drainSpellsListRestoration = new(state.PatchMod, "SustainedSpellsDrainListRestoration");
+            FormList baseSpellsListRestoration = new(state.PatchMod, "SustainedSpellsBaseListRestoration");
+            FormList lastingSpellsListRestoration = new(state.PatchMod, "SustainedSpellsEffectListRestoration");
+            FormList lastingSpellTrackerListRestoration = new(state.PatchMod, "SustainedSpellsTrackerListRestoration");
+            FormList drainSpellsListAlteration = new(state.PatchMod, "SustainedSpellsDrainListAlteration");
+            FormList baseSpellsListAlteration = new(state.PatchMod, "SustainedSpellsBaseListAlteration");
+            FormList lastingSpellsListAlteration = new(state.PatchMod, "SustainedSpellsEffectListAlteration");
+            FormList lastingSpellTrackerListAlteration = new(state.PatchMod, "SustainedSpellsTrackerListAlteration");
+            FormList drainSpellsListIllusion = new(state.PatchMod, "SustainedSpellsDrainListIllusion");
+            FormList baseSpellsListIllusion = new(state.PatchMod, "SustainedSpellsBaseListIllusion");
+            FormList lastingSpellsListIllusion = new(state.PatchMod, "SustainedSpellsEffectListIllusion");
+            FormList lastingSpellTrackerListIllusion = new(state.PatchMod, "SustainedSpellsTrackerListIllusion");
+
 
             foreach (var magicEffectGetter in state.LoadOrder.PriorityOrder.MagicEffect().WinningOverrides())
             {
@@ -79,7 +101,7 @@ namespace SustainedSpellsPatcher
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "DispellSpell",
-                                        Object = FormKey.Factory("000802:Sustained Spells.esp").ToLink<Spell>()
+                                        Object = FormKey.Factory("000D6A:Sustained Spells.esp").ToLink<Spell>()
                                     }
                                 }
                             });
@@ -96,7 +118,7 @@ namespace SustainedSpellsPatcher
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "DispellSpell",
-                                        Object = FormKey.Factory("000802:Sustained Spells.esp").ToLink<Spell>()
+                                        Object = FormKey.Factory("000D6A:Sustained Spells.esp").ToLink<Spell>()
                                     }
                                 }
                             });
@@ -134,8 +156,148 @@ namespace SustainedSpellsPatcher
                                     new ScriptObjectProperty()
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
-                                        Name = "SustainedSpellsEffectList",
+                                        Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListConjuration.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.IllusionModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListIllusion.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.AlterationModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListAlteration.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.DestructionModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListDestruction.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.RestorationModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListRestoration.ToLink()
                                     }
                                 }
                             });
@@ -172,8 +334,148 @@ namespace SustainedSpellsPatcher
                                     new ScriptObjectProperty()
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
-                                        Name = "SustainedSpellsEffectList",
+                                        Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListConjuration.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.IllusionModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListIllusion.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListIllusion.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.AlterationModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListAlteration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListAlteration.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.DestructionModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListDestruction.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListDestruction.ToLink()
+                                    }
+                                }
+                            });
+                            state.PatchMod.MagicEffects.Set(magicEffect);
+                            break;
+                        case ActorValue.RestorationModifier:
+                            magicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
+                            {
+                                Flags = ScriptEntry.Flag.Local,
+                                Name = "SustainedSpellsRecalculateCosts",
+                                Properties = new()
+                                {
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsDrainList",
+                                        Object = drainSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsBaseList",
+                                        Object = baseSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsEffectList",
+                                        Object = lastingSpellsListRestoration.ToLink()
+                                    },
+                                    new ScriptObjectProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "SustainedSpellsTrackerList",
+                                        Object = lastingSpellTrackerListRestoration.ToLink()
                                     }
                                 }
                             });
@@ -205,7 +507,9 @@ namespace SustainedSpellsPatcher
                     var spell = spellGetter.Spell.Resolve(state.LinkCache);
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstEffect = spell.Effects[0].BaseEffect.Resolve(state.LinkCache);
-                    if ((Settings.Value.enableSummonSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature) || (Settings.Value.enableReanimateSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate) || (Settings.Value.enableBoundWeaponSpells && firstEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Bound))
+                    MagicEffectArchetype.TypeEnum spellType = firstEffect.Archetype.Type;
+                    ActorValue spellSkill = firstEffect.MagicSkill;
+                    if ((Settings.Value.enableSummonSpells && spellType == MagicEffectArchetype.TypeEnum.SummonCreature) || (Settings.Value.enableReanimateSpells && spellType == MagicEffectArchetype.TypeEnum.Reanimate) || (Settings.Value.enableBoundWeaponSpells && spellType == MagicEffectArchetype.TypeEnum.Bound) || (Settings.Value.enableCloakSpells && spellType == MagicEffectArchetype.TypeEnum.Cloak))
                     {
                         Console.WriteLine(spell.EditorID);
                         Spell lastingSpell;
@@ -216,20 +520,16 @@ namespace SustainedSpellsPatcher
                         {
                             lastingSpell = spell.Duplicate(state.PatchMod.GetNextFormKey());
                             lastingSpell.EditorID = "SustainedSpell_" + lastingSpell.EditorID;
+                            lastingSpell.Name = "Lasting " + lastingSpell;
                         }
                         lastingSpell.Effects.Clear();
                         lastingSpell.Flags |= SpellDataFlag.NoDualCastModification;
-                        if (!Settings.Value.replaceSpells) lastingSpell.Name = "Lasting " + lastingSpell;
-
-                        lastingSpellsListConjuration.Items.Add(lastingSpell);
-                        baseSpellsListConjuration.Items.Add(spell);
 
                         MiscItem tracker = new(state.PatchMod, "SustainedSpellTracker_" + lastingSpell.EditorID)
                         {
                             MajorFlags = MiscItem.MajorFlag.NonPlayable
                         };
                         state.PatchMod.MiscItems.Set(tracker);
-                        lastingSpellTrackerListConjuration.Items.Add(tracker);
 
                         string lastingSpellDescription = " Caster will have reduced magicka while this spell is active.";
                         float longestChargeTime = 0;
@@ -285,7 +585,40 @@ namespace SustainedSpellsPatcher
                             }
                         };
                         state.PatchMod.Spells.Set(drainSpell);
-                        drainSpellsListConjuration.Items.Add(drainSpell);
+
+                        switch (spellSkill)
+                        {
+                            case ActorValue.Conjuration:
+                                lastingSpellsListConjuration.Items.Add(lastingSpell);
+                                baseSpellsListConjuration.Items.Add(spell);
+                                lastingSpellTrackerListConjuration.Items.Add(tracker);
+                                drainSpellsListConjuration.Items.Add(drainSpell);
+                                break;
+                            case ActorValue.Restoration:
+                                lastingSpellsListRestoration.Items.Add(lastingSpell);
+                                baseSpellsListRestoration.Items.Add(spell);
+                                lastingSpellTrackerListRestoration.Items.Add(tracker);
+                                drainSpellsListRestoration.Items.Add(drainSpell);
+                                break;
+                            case ActorValue.Alteration:
+                                lastingSpellsListAlteration.Items.Add(lastingSpell);
+                                baseSpellsListAlteration.Items.Add(spell);
+                                lastingSpellTrackerListAlteration.Items.Add(tracker);
+                                drainSpellsListAlteration.Items.Add(drainSpell);
+                                break;
+                            case ActorValue.Destruction:
+                                lastingSpellsListDestruction.Items.Add(lastingSpell);
+                                baseSpellsListDestruction.Items.Add(spell);
+                                lastingSpellTrackerListDestruction.Items.Add(tracker);
+                                drainSpellsListDestruction.Items.Add(drainSpell);
+                                break;
+                            case ActorValue.Illusion:
+                                lastingSpellsListIllusion.Items.Add(lastingSpell);
+                                baseSpellsListIllusion.Items.Add(spell);
+                                lastingSpellTrackerListIllusion.Items.Add(tracker);
+                                drainSpellsListIllusion.Items.Add(drainSpell);
+                                break;
+                        }
 
                         foreach (var spellEffect in spell.Effects)
                         {
@@ -300,17 +633,40 @@ namespace SustainedSpellsPatcher
                                 var description = magicEffect.Description?.ToString();
                                 if (description != null && description.Length > 0)
                                 {
-                                    lastingSpellDescription = description.Replace(" for <dur> seconds", "") + lastingSpellDescription;
+                                    if (description.StartsWith("For <dur> seconds, "))
+                                    {
+                                        lastingSpellDescription = CapatalizeFirst(description.Replace("For <dur> seconds, ", "")).Replace("<mag>", spellEffect.Data?.Magnitude.ToInt().ToString()) + lastingSpellDescription;
+                                    }
+                                    else
+                                    {
+                                        lastingSpellDescription = description.Replace(" for <dur> seconds", "").Replace("<mag>", spellEffect.Data?.Magnitude.ToInt().ToString()) + lastingSpellDescription;
+                                    }
                                 }
                             }
-                            if (magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.SummonCreature || magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Reanimate || magicEffect.Archetype.Type == MagicEffectArchetype.TypeEnum.Bound)
+                            if (magicEffect.Archetype.Type == spellType)
                             {
                                 var lastingMagicEffect = magicEffect.Duplicate(state.PatchMod.GetNextFormKey());
                                 lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
                                 lastingMagicEffect.EditorID = "SustainedSpellEffect_" + lastingMagicEffect.EditorID;
                                 lastingMagicEffect.Flags |= MagicEffect.Flag.HideInUI;
                                 lastingMagicEffect.Keywords ??= new();
-                                lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
+                                if (spellType == MagicEffectArchetype.TypeEnum.SummonCreature || spellType == MagicEffectArchetype.TypeEnum.Bound || spellType == MagicEffectArchetype.TypeEnum.Reanimate)
+                                {
+                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
+                                } else if (spellType == MagicEffectArchetype.TypeEnum.Cloak)
+                                {
+                                    if (magicEffect.Keywords != null)
+                                    {
+                                        if (magicEffect.Keywords.Contains(FormKey.Factory("0B62E4:Skyrim.esm"))) // MagicCloak
+                                        {
+                                            lastingMagicEffect.Keywords.Add(FormKey.Factory("000D66:Sustained Spells.esp")); //SustainedCloak
+                                        }
+                                        else if (magicEffect.Keywords.Contains(FormKey.Factory("F405A2:MysticismMagic.esm"))) // MAG_MagicSoulTrap
+                                        {
+                                            lastingMagicEffect.Keywords.Add(FormKey.Factory("000D67:Sustained Spells.esp")); //SustainedSoulCloak
+                                        }
+                                    }
+                                }
                                 lastingMagicEffect.VirtualMachineAdapter ??= new();
                                 lastingMagicEffect.VirtualMachineAdapter.Scripts.Add(new ScriptEntry()
                                 {
@@ -360,6 +716,32 @@ namespace SustainedSpellsPatcher
                                     }
                                 });
                                 state.PatchMod.MagicEffects.Set(lastingMagicEffect);
+                            } else if (spellEffect.Data != null && spellEffect.Data.Duration > 0)
+                            {
+                                var lastingMagicEffect = magicEffect.Duplicate(state.PatchMod.GetNextFormKey());
+                                lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
+                                lastingMagicEffect.EditorID = "SustainedSpellEffect_" + lastingMagicEffect.EditorID;
+                                lastingMagicEffect.Keywords ??= new();
+                                if (spellType == MagicEffectArchetype.TypeEnum.SummonCreature || spellType == MagicEffectArchetype.TypeEnum.Bound || spellType == MagicEffectArchetype.TypeEnum.Reanimate)
+                                {
+                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
+                                }
+                                else if (spellType == MagicEffectArchetype.TypeEnum.Cloak)
+                                {
+                                    if (magicEffect.Keywords != null)
+                                    {
+                                        if (magicEffect.Keywords.Contains(FormKey.Factory("0B62E4:Skyrim.esm"))) // MagicCloak
+                                        {
+                                            lastingMagicEffect.Keywords.Add(FormKey.Factory("000D66:Sustained Spells.esp")); //SustainedCloak
+                                        }
+                                        else if (magicEffect.Keywords.Contains(FormKey.Factory("F405A2:MysticismMagic.esm"))) // MAG_MagicSoulTrap
+                                        {
+                                            lastingMagicEffect.Keywords.Add(FormKey.Factory("000D67:Sustained Spells.esp")); //SustainedSoulCloak
+                                        }
+                                    }
+                                }
+                                state.PatchMod.MagicEffects.Set(lastingMagicEffect);
+
                             }
                             lastingSpell.Effects.Add(lastingSpellEffect);
                         }
@@ -422,6 +804,22 @@ namespace SustainedSpellsPatcher
             state.PatchMod.FormLists.Set(baseSpellsListConjuration);
             state.PatchMod.FormLists.Set(lastingSpellsListConjuration);
             state.PatchMod.FormLists.Set(lastingSpellTrackerListConjuration);
+            state.PatchMod.FormLists.Set(drainSpellsListAlteration);
+            state.PatchMod.FormLists.Set(baseSpellsListAlteration);
+            state.PatchMod.FormLists.Set(lastingSpellsListAlteration);
+            state.PatchMod.FormLists.Set(lastingSpellTrackerListAlteration);
+            state.PatchMod.FormLists.Set(drainSpellsListRestoration);
+            state.PatchMod.FormLists.Set(baseSpellsListRestoration);
+            state.PatchMod.FormLists.Set(lastingSpellsListRestoration);
+            state.PatchMod.FormLists.Set(lastingSpellTrackerListRestoration);
+            state.PatchMod.FormLists.Set(drainSpellsListDestruction);
+            state.PatchMod.FormLists.Set(baseSpellsListDestruction);
+            state.PatchMod.FormLists.Set(lastingSpellsListDestruction);
+            state.PatchMod.FormLists.Set(lastingSpellTrackerListDestruction);
+            state.PatchMod.FormLists.Set(drainSpellsListIllusion);
+            state.PatchMod.FormLists.Set(baseSpellsListIllusion);
+            state.PatchMod.FormLists.Set(lastingSpellsListIllusion);
+            state.PatchMod.FormLists.Set(lastingSpellTrackerListIllusion);
         }
     }
 }
