@@ -650,7 +650,10 @@ namespace SustainedSpellsPatcher
                             lastingSpell.Name = "Lasting " + lastingSpell;
                         }
                         lastingSpell.Effects.Clear();
-                        lastingSpell.Flags |= SpellDataFlag.NoDualCastModification;
+                        if (!firstMagicEffect.Flags.HasFlag(MagicEffect.Flag.PowerAffectsMagnitude))
+                        {
+                            lastingSpell.Flags |= SpellDataFlag.NoDualCastModification;
+                        }
 
                         MiscItem tracker = new(state.PatchMod, "SustainedSpellTracker_" + lastingSpell.EditorID)
                         {
