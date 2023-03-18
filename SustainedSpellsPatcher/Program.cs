@@ -562,25 +562,6 @@ namespace SustainedSpellsPatcher
                                 {
                                     BaseEffect = drainEffect.ToNullableLink<IMagicEffectGetter>(),
                                     Data = new()
-                                },
-                                new Effect()
-                                {
-                                    BaseEffect = drainEffect.ToNullableLink<IMagicEffectGetter>(),
-                                    Data = new(),
-                                    Conditions = new ExtendedList<Condition>()
-                                    {
-                                        new ConditionFloat()
-                                        {
-                                            CompareOperator = CompareOperator.GreaterThanOrEqualTo,
-                                            ComparisonValue = 2,
-                                            Data = new FunctionConditionData()
-                                            {
-                                                RunOnType = Condition.RunOnType.Subject,
-                                                Function = Condition.Function.GetItemCount,
-                                                ParameterOneRecord = tracker.ToLink()
-                                            }
-                                        }
-                                    }
                                 }
                             }
                         };
