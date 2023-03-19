@@ -13,17 +13,24 @@ namespace SustainedSpellsPatcher
 
         //public double LastingCostMultiplier = 1.0;
 
+        public int minDuration = 30;
+
         public bool enableSummonSpells = true;
         public bool enableReanimateSpells = true;
         public bool enableBoundWeaponSpells = true;
         public bool enableCloakSpells = true;
         public bool enableFleshSpells = true;
         public bool enableShieldSpells = true;
-        public bool enableFeatherSpells = true;
         public bool enableWaterbreathingSpells = true;
         public bool enableCandlelightSpells = true;
         //public bool enableMagelightSpells = true;
         public bool enableMuffleSpells = true;
+        public bool enableInvisibilitySpells = true;
+        public bool enableFeatherSpells = true;
+        public bool enableImbueWeaponSpells = true;
+        public bool enableBlackBookSpells = true;
+        public bool enableAspectSpells = true;
+        public bool enableMagefistSpells = true;
 
         public bool replaceSpells = true;
 
@@ -46,8 +53,56 @@ namespace SustainedSpellsPatcher
             Cloak,
             SoulCloak,
             Shield,
-            Candlelight
+            Invisibility,
+            Candlelight,
+            Magefist,
+            ImbueWeapon,
+            BlackBook,
+            Aspect
             //Magelight
+        }
+
+        public static bool IsSpellTypeEnabled(SpellArchetypeType spellType)
+        {
+            switch (spellType)
+            {
+                case SpellArchetypeType.Unknown:
+                    return false;
+                case SpellArchetypeType.BoundWeapon:
+                    return Settings.Value.enableBoundWeaponSpells;
+                case SpellArchetypeType.Summon:
+                    return Settings.Value.enableSummonSpells;
+                case SpellArchetypeType.Flesh:
+                    return Settings.Value.enableFleshSpells;
+                case SpellArchetypeType.Cloak:
+                    return Settings.Value.enableCloakSpells;
+                case SpellArchetypeType.SoulCloak:
+                    return Settings.Value.enableCloakSpells;
+                case SpellArchetypeType.Feather:
+                    return Settings.Value.enableFeatherSpells;
+                case SpellArchetypeType.Muffle:
+                    return Settings.Value.enableMuffleSpells;
+                case SpellArchetypeType.Reanimate:
+                    return Settings.Value.enableReanimateSpells;
+                case SpellArchetypeType.Shield:
+                    return Settings.Value.enableShieldSpells;
+                case SpellArchetypeType.Waterbreathing:
+                    return Settings.Value.enableWaterbreathingSpells;
+                case SpellArchetypeType.Candlelight:
+                    return Settings.Value.enableCandlelightSpells;
+                case SpellArchetypeType.Invisibility:
+                    return Settings.Value.enableInvisibilitySpells;
+                case SpellArchetypeType.Magefist:
+                    return Settings.Value.enableMagefistSpells;
+                case SpellArchetypeType.BlackBook:
+                    return Settings.Value.enableBlackBookSpells;
+                case SpellArchetypeType.Aspect:
+                    return Settings.Value.enableAspectSpells;
+                case SpellArchetypeType.ImbueWeapon:
+                    return Settings.Value.enableImbueWeaponSpells;
+                default:
+                    return false;
+            }
         }
 
         public static SpellArchetypeType GetSpellType(IMagicEffectGetter magicEffect)
@@ -60,6 +115,8 @@ namespace SustainedSpellsPatcher
                     return SpellArchetypeType.Reanimate;
                 case MagicEffectArchetype.TypeEnum.Bound:
                     return SpellArchetypeType.BoundWeapon;
+                case MagicEffectArchetype.TypeEnum.Invisibility:
+                    return SpellArchetypeType.Invisibility;
                 case MagicEffectArchetype.TypeEnum.Cloak:
                     if (magicEffect.Keywords != null)
                     {
@@ -67,9 +124,13 @@ namespace SustainedSpellsPatcher
                         {
                             return SpellArchetypeType.Cloak;
                         }
-                        else if (magicEffect.Keywords.Contains(FormKey.Factory("F405A2:MysticismMagic.esm")))
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("F405A2:MysticismMagic.esp")))
                         {
                             return SpellArchetypeType.SoulCloak;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("251EC3:Odin - Skyrim Magic Overhaul.esp")))
+                        {
+                            return SpellArchetypeType.ImbueWeapon;
                         }
                     }
                     break;
@@ -93,6 +154,16 @@ namespace SustainedSpellsPatcher
                     {
                         return SpellArchetypeType.Muffle;
                     }
+                    else if (magicEffect.Archetype.ActorValue == ActorValue.UnarmedDamage)
+                    {
+                        if (magicEffect.Keywords != null)
+                        {
+                            if (magicEffect.Keywords.Contains(FormKey.Factory("000D62:magefist.esp")))
+                            {
+                                return SpellArchetypeType.Magefist;
+                            }
+                        }
+                    }
                     else if (magicEffect.Keywords != null)
                     {
                         if (magicEffect.Keywords.Contains(FormKey.Factory("01EA72:Skyrim.esm")))
@@ -109,46 +180,25 @@ namespace SustainedSpellsPatcher
                         }
                     }
                     break;
+                case MagicEffectArchetype.TypeEnum.Script:
+                    if (magicEffect.Keywords != null)
+                    {
+                        if (magicEffect.Keywords.Contains(FormKey.Factory("000901:Necrom.esp")))
+                        {
+                            return SpellArchetypeType.BlackBook;
+                        } else if (magicEffect.Keywords.Contains(FormKey.Factory("00081A:Natura.esp")))
+                        {
+                            return SpellArchetypeType.Aspect;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("EA6003:Update.esm")))
+                        {
+                            return SpellArchetypeType.ImbueWeapon;
+                        }
+                    }
+                    break;
             }
             return SpellArchetypeType.Unknown;
         }
-
-        public static bool IsSpellTypeEnabled(SpellArchetypeType spellType)
-        {
-            switch (spellType)
-            {
-                case SpellArchetypeType.BoundWeapon:
-                    return Settings.Value.enableBoundWeaponSpells;
-                case SpellArchetypeType.Summon:
-                    return Settings.Value.enableSummonSpells;
-                case SpellArchetypeType.Flesh:
-                    return Settings.Value.enableFleshSpells;
-                case SpellArchetypeType.Cloak:
-                    return Settings.Value.enableCloakSpells;
-                case SpellArchetypeType.SoulCloak:
-                    return Settings.Value.enableCloakSpells;
-                case SpellArchetypeType.Feather:
-                    return Settings.Value.enableFeatherSpells;
-                case SpellArchetypeType.Muffle:
-                    return Settings.Value.enableMuffleSpells;
-                case SpellArchetypeType.Reanimate:
-                    return Settings.Value.enableReanimateSpells;
-                case SpellArchetypeType.Shield:
-                    return Settings.Value.enableShieldSpells;
-                case SpellArchetypeType.Waterbreathing:
-                    return Settings.Value.enableWaterbreathingSpells;
-                case SpellArchetypeType.Candlelight:
-                    return Settings.Value.enableCandlelightSpells;
-                    /*
-                case SpellArchetypeType.Magelight:
-                    return Settings.Value.enableMagelightSpells;
-                    */
-                case SpellArchetypeType.Unknown:
-                    return false;
-            }
-            return false;
-        }
-
 
         static Lazy<TestSettings> Settings = null!;
         public static string CapatalizeFirst(string text)
@@ -225,7 +275,7 @@ namespace SustainedSpellsPatcher
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "DispellSpell",
-                                        Object = FormKey.Factory("000D6A:Sustained Spells.esp").ToLink<Spell>()
+                                        Object = FormKey.Factory("000D77:Sustained Spells.esp").ToLink<Spell>()
                                     }
                                 }
                             });
@@ -242,7 +292,7 @@ namespace SustainedSpellsPatcher
                                     {
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "DispellSpell",
-                                        Object = FormKey.Factory("000D6A:Sustained Spells.esp").ToLink<Spell>()
+                                        Object = FormKey.Factory("000D77:Sustained Spells.esp").ToLink<Spell>()
                                     }
                                 }
                             });
@@ -631,7 +681,7 @@ namespace SustainedSpellsPatcher
                     var spell = spellGetter.Spell.Resolve(state.LinkCache);
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstSpellEffect = spell.Effects[0];
-                    if (firstSpellEffect.Data?.Duration == 0) continue;
+                    if (firstSpellEffect.Data?.Duration < Settings.Value.minDuration) continue;
                     var firstMagicEffect = firstSpellEffect.BaseEffect.Resolve(state.LinkCache);
                     SpellArchetypeType spellType = GetSpellType(firstMagicEffect);
                     ActorValue spellSkill = firstMagicEffect.MagicSkill;
@@ -761,50 +811,57 @@ namespace SustainedSpellsPatcher
                                 lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
                                 lastingMagicEffect.EditorID = "SustainedSpellEffect_" + lastingMagicEffect.EditorID;
                                 lastingMagicEffect.Flags |= MagicEffect.Flag.HideInUI;
-                                lastingMagicEffect.Keywords ??= new();
-                                if (spellType == SpellArchetypeType.Summon)
+                                lastingMagicEffect.Keywords ??= new(); 
+                                switch (spellType)
                                 {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
-                                }
-                                else if(spellType == SpellArchetypeType.Reanimate)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6D:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.BoundWeapon)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6E:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Cloak)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D66:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.SoulCloak)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D67:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Waterbreathing)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6F:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Feather)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D70:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Flesh)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D71:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Shield)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D72:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Candlelight)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D73:Sustained Spells.esp"));
-                                }
-                                else if (spellType == SpellArchetypeType.Muffle)
-                                {
-                                    lastingMagicEffect.Keywords.Add(FormKey.Factory("000D73:Sustained Spells.esp"));
+                                    case SpellArchetypeType.BoundWeapon:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6E:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Summon: 
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000800:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Flesh:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D71:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Cloak:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D66:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.SoulCloak:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D67:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Feather:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D70:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Muffle:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D75:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Reanimate:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6D:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Shield:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D72:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Waterbreathing:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D6F:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Candlelight:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D73:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Invisibility:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7A:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Magefist:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7C:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.ImbueWeapon:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7D:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.BlackBook:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D79:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Aspect:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7B:Sustained Spells.esp"));
+                                        break;
                                 }
 
                                 if (spellType == GetSpellType(lastingMagicEffect) && lastingMagicEffect.Archetype.ActorValue == firstMagicEffect.Archetype.ActorValue)
