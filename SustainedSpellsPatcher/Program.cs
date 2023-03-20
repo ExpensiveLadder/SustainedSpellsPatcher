@@ -15,6 +15,9 @@ namespace SustainedSpellsPatcher
 
         public int minDuration = 30;
 
+        public bool conjurationPotionsIncreaseMagnitude = true;
+        public bool alterationPotionsIncreaseMagnitude = true;
+
         public bool enableSummonSpells = true;
         public bool enableReanimateSpells = true;
         public bool enableBoundWeaponSpells = true;
@@ -254,6 +257,31 @@ namespace SustainedSpellsPatcher
             FormList lastingSpellsListIllusion = new(state.PatchMod, "SustainedSpellsEffectListIllusion");
             FormList lastingSpellTrackerListIllusion = new(state.PatchMod, "SustainedSpellsTrackerListIllusion");
 
+            if (Settings.Value.conjurationPotionsIncreaseMagnitude || Settings.Value.alterationPotionsIncreaseMagnitude)
+            {
+                Perk alchemySkillBoosts = FormKey.Factory("0A725C:Skyrim.esm").ToLink<IPerkGetter>().Resolve(state.LinkCache).DeepCopy();
+                foreach (var effect in alchemySkillBoosts.Effects)
+                {
+                    if (effect is PerkEntryPointModifyActorValue perkeffect && perkeffect.EntryPoint == APerkEntryPointEffect.EntryType.ModSpellDuration && perkeffect.Modification == PerkEntryPointModifyActorValue.ModificationType.MultiplyOnePlusAVMult)
+                    {
+                        if (perkeffect.ActorValue == ActorValue.ConjurationPowerModifier)
+                        {
+                            if (Settings.Value.conjurationPotionsIncreaseMagnitude)
+                            {
+                                perkeffect.EntryPoint = APerkEntryPointEffect.EntryType.ModSpellMagnitude;
+                            }
+                        } 
+                        else if (perkeffect.ActorValue == ActorValue.AlterationPowerModifier)
+                        {
+                            if (Settings.Value.alterationPotionsIncreaseMagnitude)
+                            {
+                                perkeffect.EntryPoint = APerkEntryPointEffect.EntryType.ModSpellMagnitude;
+                            }
+                        }
+                    }
+                }
+                state.PatchMod.Perks.Set(alchemySkillBoosts);
+            }
 
             foreach (var magicEffectGetter in state.LoadOrder.PriorityOrder.MagicEffect().WinningOverrides())
             {
