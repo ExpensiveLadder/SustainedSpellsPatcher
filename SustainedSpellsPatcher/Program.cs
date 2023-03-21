@@ -9,11 +9,8 @@ namespace SustainedSpellsPatcher
 {
     public class TestSettings
     {
-        //public double InitialCostMultiplier = 0.0;
-
-        //public double LastingCostMultiplier = 1.0;
-
-        public int minDuration = 30;
+        public float InitialCostMultiplier = 1.0f;
+        public float LastingCostMultiplier = 1.0f;
 
         public bool conjurationPotionsIncreaseMagnitude = true;
         public bool alterationPotionsIncreaseMagnitude = true;
@@ -37,8 +34,11 @@ namespace SustainedSpellsPatcher
 
         public bool replaceSpells = true;
 
-        public List<IFormLinkGetter<ISpellGetter>> blacklist = new();
+        public int duration = 86313600;
+        public int minDuration = 30;
+        public int maxDuration = 10000;
 
+        public List<IFormLinkGetter<ISpellGetter>> blacklist = new();
     }
 
     public class Program
@@ -67,45 +67,27 @@ namespace SustainedSpellsPatcher
 
         public static bool IsSpellTypeEnabled(SpellArchetypeType spellType)
         {
-            switch (spellType)
+            return spellType switch
             {
-                case SpellArchetypeType.Unknown:
-                    return false;
-                case SpellArchetypeType.BoundWeapon:
-                    return Settings.Value.enableBoundWeaponSpells;
-                case SpellArchetypeType.Summon:
-                    return Settings.Value.enableSummonSpells;
-                case SpellArchetypeType.Flesh:
-                    return Settings.Value.enableFleshSpells;
-                case SpellArchetypeType.Cloak:
-                    return Settings.Value.enableCloakSpells;
-                case SpellArchetypeType.SoulCloak:
-                    return Settings.Value.enableCloakSpells;
-                case SpellArchetypeType.Feather:
-                    return Settings.Value.enableFeatherSpells;
-                case SpellArchetypeType.Muffle:
-                    return Settings.Value.enableMuffleSpells;
-                case SpellArchetypeType.Reanimate:
-                    return Settings.Value.enableReanimateSpells;
-                case SpellArchetypeType.Shield:
-                    return Settings.Value.enableShieldSpells;
-                case SpellArchetypeType.Waterbreathing:
-                    return Settings.Value.enableWaterbreathingSpells;
-                case SpellArchetypeType.Candlelight:
-                    return Settings.Value.enableCandlelightSpells;
-                case SpellArchetypeType.Invisibility:
-                    return Settings.Value.enableInvisibilitySpells;
-                case SpellArchetypeType.Magefist:
-                    return Settings.Value.enableMagefistSpells;
-                case SpellArchetypeType.BlackBook:
-                    return Settings.Value.enableBlackBookSpells;
-                case SpellArchetypeType.Aspect:
-                    return Settings.Value.enableAspectSpells;
-                case SpellArchetypeType.ImbueWeapon:
-                    return Settings.Value.enableImbueWeaponSpells;
-                default:
-                    return false;
-            }
+                SpellArchetypeType.Unknown => false,
+                SpellArchetypeType.BoundWeapon => Settings.Value.enableBoundWeaponSpells,
+                SpellArchetypeType.Summon => Settings.Value.enableSummonSpells,
+                SpellArchetypeType.Flesh => Settings.Value.enableFleshSpells,
+                SpellArchetypeType.Cloak => Settings.Value.enableCloakSpells,
+                SpellArchetypeType.SoulCloak => Settings.Value.enableCloakSpells,
+                SpellArchetypeType.Feather => Settings.Value.enableFeatherSpells,
+                SpellArchetypeType.Muffle => Settings.Value.enableMuffleSpells,
+                SpellArchetypeType.Reanimate => Settings.Value.enableReanimateSpells,
+                SpellArchetypeType.Shield => Settings.Value.enableShieldSpells,
+                SpellArchetypeType.Waterbreathing => Settings.Value.enableWaterbreathingSpells,
+                SpellArchetypeType.Candlelight => Settings.Value.enableCandlelightSpells,
+                SpellArchetypeType.Invisibility => Settings.Value.enableInvisibilitySpells,
+                SpellArchetypeType.Magefist => Settings.Value.enableMagefistSpells,
+                SpellArchetypeType.BlackBook => Settings.Value.enableBlackBookSpells,
+                SpellArchetypeType.Aspect => Settings.Value.enableAspectSpells,
+                SpellArchetypeType.ImbueWeapon => Settings.Value.enableImbueWeaponSpells,
+                _ => false,
+            };
         }
 
         public static SpellArchetypeType GetSpellType(IMagicEffectGetter magicEffect)
@@ -204,9 +186,36 @@ namespace SustainedSpellsPatcher
         }
 
         static Lazy<TestSettings> Settings = null!;
+
         public static string CapatalizeFirst(string text)
         {
             return string.Concat(text[0].ToString().ToUpper(), text.AsSpan(1));
+        }
+
+        public static uint GetTrueSpellCost(IPatcherState<ISkyrimMod, ISkyrimModGetter> state, ISpellGetter spell)
+        {
+            uint cost = 0;
+            foreach(var spellEffect in spell.Effects)
+            {
+                //effect_base_cost * (Magnitude * Duration / 10) ^ 1.1
+                //A Magnitude< 1 is treated as 1, and a Duration of 0 as 10.For concentration spells, the Duration is also treated as 10.
+                var magicEffect = spellEffect.BaseEffect.Resolve(state.LinkCache);
+                var magnitude = 1.0;
+                var duration = 10;
+                if (spellEffect.Data != null)
+                {
+                    if (!magicEffect.Flags.HasFlag(MagicEffect.Flag.NoDuration) && spellEffect.Data.Duration > 0)
+                    {
+                        duration = spellEffect.Data.Duration;
+                    }
+                    if (!magicEffect.Flags.HasFlag(MagicEffect.Flag.NoMagnitude) && spellEffect.Data.Magnitude > 1)
+                    {
+                        magnitude = spellEffect.Data.Magnitude;
+                    }
+                }
+                cost += (uint)(magicEffect.BaseCost * Math.Pow(duration * magnitude / 10, 1.1));
+            }
+            return cost;
         }
 
         public static async Task<int> Main(string[] args)
@@ -227,14 +236,6 @@ namespace SustainedSpellsPatcher
             //Your code here!
 
             List<IFormLinkGetter<ISpellGetter>> blacklist = Settings.Value.blacklist;
-            if (!state.LoadOrder.ModExists(new ModKey("MysticismMagic", ModType.Plugin), true))
-            {
-                blacklist.Add(FormKey.Factory("07E5D5:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Flame Thrall
-                blacklist.Add(FormKey.Factory("07E5D6:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Frost Thrall
-                blacklist.Add(FormKey.Factory("07E5D7:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Storm Thrall
-            }
-            blacklist.Add(FormKey.Factory("07E8DF:Skyrim.esm").ToLinkGetter<ISpellGetter>()); // Dead Thrall
-            blacklist.Add(FormKey.Factory("289AFB:Odin - Skyrim Magic Overhaul.esp").ToLinkGetter<ISpellGetter>()); // Orc Strength
 
             FormList drainSpellsListConjuration = new(state.PatchMod, "SustainedSpellsDrainListConjuration");
             FormList baseSpellsListConjuration = new(state.PatchMod, "SustainedSpellsBaseListConjuration");
@@ -360,6 +361,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListConjuration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -395,6 +402,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListIllusion.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -430,6 +443,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListAlteration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -465,6 +484,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListDestruction.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -500,6 +525,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListRestoration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -538,6 +569,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListConjuration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -573,6 +610,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListIllusion.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -608,6 +651,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListAlteration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -643,6 +692,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListDestruction.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -678,6 +733,12 @@ namespace SustainedSpellsPatcher
                                         Flags = ScriptProperty.Flag.Edited,
                                         Name = "SustainedSpellsTrackerList",
                                         Object = lastingSpellTrackerListRestoration.ToLink()
+                                    },
+                                    new ScriptFloatProperty()
+                                    {
+                                        Flags = ScriptProperty.Flag.Edited,
+                                        Name = "costmultiplier",
+                                        Data = Settings.Value.LastingCostMultiplier
                                     }
                                 }
                             });
@@ -709,7 +770,7 @@ namespace SustainedSpellsPatcher
                     var spell = spellGetter.Spell.Resolve(state.LinkCache);
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstSpellEffect = spell.Effects[0];
-                    if (firstSpellEffect.Data?.Duration < Settings.Value.minDuration) continue;
+                    if (firstSpellEffect.Data?.Duration < Settings.Value.minDuration || firstSpellEffect.Data?.Duration > Settings.Value.maxDuration) continue;
                     var firstMagicEffect = firstSpellEffect.BaseEffect.Resolve(state.LinkCache);
                     SpellArchetypeType spellType = GetSpellType(firstMagicEffect);
                     ActorValue spellSkill = firstMagicEffect.MagicSkill;
@@ -814,7 +875,7 @@ namespace SustainedSpellsPatcher
                         {
                             var lastingSpellEffect = spellEffect.DeepCopy();
                             lastingSpellEffect.Data ??= new();
-                            lastingSpellEffect.Data.Duration = 86400;
+                            lastingSpellEffect.Data.Duration = Settings.Value.duration;
 
                             var magicEffect = spellEffect.BaseEffect.Resolve(state.LinkCache);
                             if (magicEffect.SpellmakingCastingTime > longestChargeTime) longestChargeTime = magicEffect.SpellmakingCastingTime;
@@ -839,6 +900,7 @@ namespace SustainedSpellsPatcher
                                 lastingSpellEffect.BaseEffect.SetTo(lastingMagicEffect);
                                 lastingMagicEffect.EditorID = "SustainedSpellEffect_" + lastingMagicEffect.EditorID;
                                 lastingMagicEffect.Flags |= MagicEffect.Flag.HideInUI;
+                                if (lastingMagicEffect.Flags.HasFlag(MagicEffect.Flag.PowerAffectsDuration)) lastingMagicEffect.Flags -= MagicEffect.Flag.PowerAffectsDuration;
                                 lastingMagicEffect.Keywords ??= new(); 
                                 switch (spellType)
                                 {
@@ -931,6 +993,12 @@ namespace SustainedSpellsPatcher
                                                 Flags = ScriptProperty.Flag.Edited,
                                                 Name = "Skill",
                                                 Data = (int)spellSkill
+                                            },
+                                            new ScriptFloatProperty()
+                                            {
+                                                Flags = ScriptProperty.Flag.Edited,
+                                                Name = "costmultiplier",
+                                                Data = Settings.Value.LastingCostMultiplier
                                             }
                                         }
                                     });
@@ -960,9 +1028,9 @@ namespace SustainedSpellsPatcher
                         });
                         drainEffect.Description = lastingSpellDescription + " (<mag> Magicka)";
 
-
                         if (!lastingSpell.Flags.HasFlag(SpellDataFlag.ManualCostCalc))
                         {
+                            lastingSpell.BaseCost = (uint)(GetTrueSpellCost(state, spell) * Settings.Value.InitialCostMultiplier);
                             lastingSpell.Flags |= SpellDataFlag.ManualCostCalc;
                             lastingSpell.ChargeTime = longestChargeTime;
                         }
