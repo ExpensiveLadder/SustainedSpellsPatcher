@@ -765,9 +765,8 @@ namespace SustainedSpellsPatcher
 
             foreach (var bookGetter in state.LoadOrder.PriorityOrder.Book().WinningOverrides())
             {
-                if (bookGetter.Teaches is BookSpell spellGetter)
+                if (bookGetter.Teaches is BookSpell spellGetter && spellGetter.Spell.TryResolve(state.LinkCache, out var spell))
                 {
-                    var spell = spellGetter.Spell.Resolve(state.LinkCache);
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstSpellEffect = spell.Effects[0];
                     if (firstSpellEffect.Data?.Duration < Settings.Value.minDuration || firstSpellEffect.Data?.Duration > Settings.Value.maxDuration) continue;
@@ -975,12 +974,6 @@ namespace SustainedSpellsPatcher
                                                 Flags = ScriptProperty.Flag.Edited,
                                                 Name = "togglespellnegative",
                                                 Object = drainSpell.ToLink()
-                                            },
-                                            new ScriptObjectProperty()
-                                            {
-                                                Flags = ScriptProperty.Flag.Edited,
-                                                Name = "togglespelleffect",
-                                                Object = lastingMagicEffect.ToLink()
                                             },
                                             new ScriptObjectProperty()
                                             {
