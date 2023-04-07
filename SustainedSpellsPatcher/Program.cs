@@ -12,8 +12,8 @@ namespace SustainedSpellsPatcher
         public float InitialCostMultiplier = 1.0f;
         public float LastingCostMultiplier = 1.0f;
 
-        public bool conjurationPotionsIncreaseMagnitude = true;
-        public bool alterationPotionsIncreaseMagnitude = true;
+        public bool conjurationPotionsIncreaseMagnitude = false;
+        public bool alterationPotionsIncreaseMagnitude = false;
 
         public bool enableSummonSpells = true;
         public bool enableReanimateSpells = true;
@@ -28,13 +28,17 @@ namespace SustainedSpellsPatcher
         public bool enableInvisibilitySpells = true;
         public bool enableFeatherSpells = true;
         public bool enableImbueWeaponSpells = true;
-        public bool enableBlackBookSpells = true;
+        public bool enableBlackTomeSpells = true;
         public bool enableAspectSpells = true;
         public bool enableMagefistSpells = true;
+        public bool enableEvadeSpells = true;
+        public bool enableFortifyStaminaSpells = true;
+        public bool enableFortifyHealthSpells = true;
+        public bool enableRegenerationSpells = true;
 
         public bool replaceSpells = true;
 
-        public int duration = 86313600;
+        public int duration = 9999999;
         public int minDuration = 30;
         public int maxDuration = 10000;
 
@@ -60,8 +64,12 @@ namespace SustainedSpellsPatcher
             Candlelight,
             Magefist,
             ImbueWeapon,
-            BlackBook,
-            Aspect
+            BlackTome,
+            Aspect,
+            FortifyHealth,
+            FortifyStamina,
+            Evade,
+            Regeneration
             //Magelight
         }
 
@@ -83,10 +91,14 @@ namespace SustainedSpellsPatcher
                 SpellArchetypeType.Candlelight => Settings.Value.enableCandlelightSpells,
                 SpellArchetypeType.Invisibility => Settings.Value.enableInvisibilitySpells,
                 SpellArchetypeType.Magefist => Settings.Value.enableMagefistSpells,
-                SpellArchetypeType.BlackBook => Settings.Value.enableBlackBookSpells,
+                SpellArchetypeType.BlackTome => Settings.Value.enableBlackTomeSpells,
                 SpellArchetypeType.Aspect => Settings.Value.enableAspectSpells,
                 SpellArchetypeType.ImbueWeapon => Settings.Value.enableImbueWeaponSpells,
-                _ => false,
+                SpellArchetypeType.FortifyHealth => Settings.Value.enableFortifyHealthSpells,
+                SpellArchetypeType.FortifyStamina => Settings.Value.enableFortifyStaminaSpells,
+                SpellArchetypeType.Evade => Settings.Value.enableEvadeSpells,
+                SpellArchetypeType.Regeneration => Settings.Value.enableReanimateSpells,
+                _ => throw new NotImplementedException(),
             };
         }
 
@@ -149,6 +161,16 @@ namespace SustainedSpellsPatcher
                             }
                         }
                     }
+                    else if (magicEffect.Archetype.ActorValue == ActorValue.Health)
+                    {
+                        if (magicEffect.Keywords != null)
+                        {
+                            if (magicEffect.Keywords.Contains(FormKey.Factory("3D6898:MysticismMagic.esp")))
+                            {
+                                return SpellArchetypeType.Regeneration;
+                            }
+                        }
+                    }
                     else if (magicEffect.Keywords != null)
                     {
                         if (magicEffect.Keywords.Contains(FormKey.Factory("01EA72:Skyrim.esm")))
@@ -170,14 +192,27 @@ namespace SustainedSpellsPatcher
                     {
                         if (magicEffect.Keywords.Contains(FormKey.Factory("000901:Necrom.esp")))
                         {
-                            return SpellArchetypeType.BlackBook;
-                        } else if (magicEffect.Keywords.Contains(FormKey.Factory("00081A:Natura.esp")))
+                            return SpellArchetypeType.BlackTome;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("00081A:Natura.esp")))
                         {
                             return SpellArchetypeType.Aspect;
                         }
                         else if (magicEffect.Keywords.Contains(FormKey.Factory("EA6003:Update.esm")))
                         {
                             return SpellArchetypeType.ImbueWeapon;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("000BE4:Natura.esp")))
+                        {
+                            return SpellArchetypeType.Evade;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("000850:Natura.esp")))
+                        {
+                            return SpellArchetypeType.FortifyStamina;
+                        }
+                        else if (magicEffect.Keywords.Contains(FormKey.Factory("27401D:MysticismMagic.esp")))
+                        {
+                            return SpellArchetypeType.FortifyHealth;
                         }
                     }
                     break;
@@ -945,11 +980,23 @@ namespace SustainedSpellsPatcher
                                     case SpellArchetypeType.ImbueWeapon:
                                         lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7D:Sustained Spells.esp"));
                                         break;
-                                    case SpellArchetypeType.BlackBook:
+                                    case SpellArchetypeType.BlackTome:
                                         lastingMagicEffect.Keywords.Add(FormKey.Factory("000D79:Sustained Spells.esp"));
                                         break;
                                     case SpellArchetypeType.Aspect:
                                         lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7B:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.FortifyStamina:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7E:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.FortifyHealth:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D7F:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Evade:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D80:Sustained Spells.esp"));
+                                        break;
+                                    case SpellArchetypeType.Regeneration:
+                                        lastingMagicEffect.Keywords.Add(FormKey.Factory("000D81:Sustained Spells.esp"));
                                         break;
                                 }
 
