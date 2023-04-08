@@ -798,6 +798,14 @@ namespace SustainedSpellsPatcher
             descriptionEffectFlags |= MagicEffect.Flag.NoArea;
             descriptionEffectFlags |= MagicEffect.Flag.NoMagnitude;
 
+            var toggleEffectOffFlags = new MagicEffect.Flag();
+            toggleEffectOffFlags |= MagicEffect.Flag.HideInUI;
+            toggleEffectOffFlags |= MagicEffect.Flag.NoHitEffect;
+            toggleEffectOffFlags |= MagicEffect.Flag.NoHitEvent;
+            toggleEffectOffFlags |= MagicEffect.Flag.NoArea;
+            toggleEffectOffFlags |= MagicEffect.Flag.NoMagnitude;
+            toggleEffectOffFlags |= MagicEffect.Flag.NoDuration;
+
             foreach (var bookGetter in state.LoadOrder.PriorityOrder.Book().WinningOverrides())
             {
                 if (bookGetter.Teaches is BookSpell spellGetter && spellGetter.Spell.TryResolve(state.LinkCache, out var spell))
@@ -812,15 +820,21 @@ namespace SustainedSpellsPatcher
                     {
                         Console.WriteLine(spell.EditorID);
                         Spell lastingSpell;
+                        ISpellGetter baseSpell;
                         if (Settings.Value.replaceSpells)
                         {
                             lastingSpell = spell.DeepCopy();
+                            var baseSpellnew = spell.Duplicate(state.PatchMod.GetNextFormKey());
+                            baseSpellnew.EditorID = "DuplicateSpell_" + baseSpellnew.EditorID;
+                            state.PatchMod.Spells.Set(baseSpellnew);
+                            baseSpell = baseSpellnew;
                         }
                         else
                         {
                             lastingSpell = spell.Duplicate(state.PatchMod.GetNextFormKey());
                             lastingSpell.EditorID = "SustainedSpell_" + lastingSpell.EditorID;
                             lastingSpell.Name = "Lasting " + lastingSpell;
+                            baseSpell = spell;
                         }
                         lastingSpell.Effects.Clear();
                         if (!firstMagicEffect.Flags.HasFlag(MagicEffect.Flag.PowerAffectsMagnitude))
@@ -875,31 +889,31 @@ namespace SustainedSpellsPatcher
                         {
                             case ActorValue.Conjuration:
                                 lastingSpellsListConjuration.Items.Add(lastingSpell);
-                                baseSpellsListConjuration.Items.Add(spell);
+                                baseSpellsListConjuration.Items.Add(baseSpell);
                                 lastingSpellTrackerListConjuration.Items.Add(tracker);
                                 drainSpellsListConjuration.Items.Add(drainSpell);
                                 break;
                             case ActorValue.Restoration:
                                 lastingSpellsListRestoration.Items.Add(lastingSpell);
-                                baseSpellsListRestoration.Items.Add(spell);
+                                baseSpellsListRestoration.Items.Add(baseSpell);
                                 lastingSpellTrackerListRestoration.Items.Add(tracker);
                                 drainSpellsListRestoration.Items.Add(drainSpell);
                                 break;
                             case ActorValue.Alteration:
                                 lastingSpellsListAlteration.Items.Add(lastingSpell);
-                                baseSpellsListAlteration.Items.Add(spell);
+                                baseSpellsListAlteration.Items.Add(baseSpell);
                                 lastingSpellTrackerListAlteration.Items.Add(tracker);
                                 drainSpellsListAlteration.Items.Add(drainSpell);
                                 break;
                             case ActorValue.Destruction:
                                 lastingSpellsListDestruction.Items.Add(lastingSpell);
-                                baseSpellsListDestruction.Items.Add(spell);
+                                baseSpellsListDestruction.Items.Add(baseSpell);
                                 lastingSpellTrackerListDestruction.Items.Add(tracker);
                                 drainSpellsListDestruction.Items.Add(drainSpell);
                                 break;
                             case ActorValue.Illusion:
                                 lastingSpellsListIllusion.Items.Add(lastingSpell);
-                                baseSpellsListIllusion.Items.Add(spell);
+                                baseSpellsListIllusion.Items.Add(baseSpell);
                                 lastingSpellTrackerListIllusion.Items.Add(tracker);
                                 drainSpellsListIllusion.Items.Add(drainSpell);
                                 break;
@@ -1000,6 +1014,21 @@ namespace SustainedSpellsPatcher
                                         break;
                                 }
 
+                                if (spellType != SpellArchetypeType.Summon && spellType != SpellArchetypeType.Reanimate && spellType != SpellArchetypeType.BoundWeapon)
+                                {
+                                    lastingMagicEffect.Conditions.Add(new ConditionFloat()
+                                    {
+                                        CompareOperator = CompareOperator.EqualTo,
+                                        ComparisonValue = 0,
+                                        Data = new FunctionConditionData()
+                                        {
+                                            Function = Condition.Function.HasSpell,
+                                            RunOnType = Condition.RunOnType.Subject,
+                                            ParameterOneRecord = drainSpell.ToLink()
+                                        }
+                                    });
+                                }
+
                                 if (spellType == GetSpellType(lastingMagicEffect) && lastingMagicEffect.Archetype.ActorValue == firstMagicEffect.Archetype.ActorValue)
                                 {
                                     lastingMagicEffect.VirtualMachineAdapter ??= new();
@@ -1014,7 +1043,7 @@ namespace SustainedSpellsPatcher
                                             {
                                                 Flags = ScriptProperty.Flag.Edited,
                                                 Name = "basespell",
-                                                Object = spell.ToLink()
+                                                Object = baseSpell.ToLink()
                                             },
                                             new ScriptObjectProperty()
                                             {
@@ -1058,7 +1087,7 @@ namespace SustainedSpellsPatcher
                             },
                             CastingSoundLevel = SoundLevel.Silent,
                             CastType = CastType.FireAndForget,
-                            TargetType = TargetType.TargetLocation,
+                            TargetType = firstMagicEffect.TargetType,
                             Flags = descriptionEffectFlags
                         };
                         lastingSpell.Effects.Add(new Effect()
@@ -1067,6 +1096,102 @@ namespace SustainedSpellsPatcher
                             Data = new()
                         });
                         drainEffect.Description = lastingSpellDescription + " (<mag> Magicka)";
+
+                        if (spellType != SpellArchetypeType.Summon && spellType != SpellArchetypeType.Reanimate && spellType != SpellArchetypeType.BoundWeapon)
+                        {
+                            var toggleperk = new Perk(state.PatchMod, "SustainedTogglePerk_" + spell.EditorID)
+                            {
+                                Name = "Bepis",
+                                Hidden = true,
+                                Playable = false,
+                                MajorFlags = Perk.MajorFlag.NonPlayable,
+                                NumRanks = 1,
+                                Effects = new()
+                                {
+                                    new PerkEntryPointModifyValue()
+                                    {
+                                        EntryPoint = APerkEntryPointEffect.EntryType.ModSpellCost,
+                                        Modification = PerkEntryPointModifyValue.ModificationType.Multiply,
+                                        Value = 0,
+                                        PerkConditionTabCount = 2,
+                                        Conditions = new()
+                                        {
+                                            new PerkCondition()
+                                            {
+                                                RunOnTabIndex = 1,
+                                                Conditions = new ExtendedList<Condition>()
+                                                {
+                                                    new ConditionFloat()
+                                                    {
+                                                        CompareOperator = CompareOperator.EqualTo,
+                                                        ComparisonValue = 1,
+                                                        Data = new FunctionConditionData()
+                                                        {
+                                                            Function = Condition.Function.GetIsID,
+                                                            RunOnType = Condition.RunOnType.Subject,
+                                                            ParameterOneRecord = lastingSpell.ToLink()
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+                            state.PatchMod.Perks.Set(toggleperk);
+                            drainEffect.PerkToApply = toggleperk.ToLink();
+
+                            var spelltoggleeffectoff = new MagicEffect(state.PatchMod, "SustainedToggleOff_" + spell.EditorID)
+                            {
+                                Archetype = new MagicEffectArchetype()
+                                {
+                                    Type = MagicEffectArchetype.TypeEnum.Script,
+                                    ActorValue = ActorValue.None
+                                },
+                                CastingSoundLevel = SoundLevel.Silent,
+                                CastType = CastType.FireAndForget,
+                                TargetType = TargetType.Self,
+                                Flags = toggleEffectOffFlags,
+                                Conditions = new()
+                                {
+                                    new ConditionFloat()
+                                    {
+                                        CompareOperator = CompareOperator.EqualTo,
+                                        ComparisonValue = 1,
+                                        Data = new FunctionConditionData()
+                                        {
+                                            Function = Condition.Function.HasSpell,
+                                            RunOnType = Condition.RunOnType.Subject,
+                                            ParameterOneRecord = drainSpell.ToLink()
+                                        }
+                                    }
+                                },
+                                VirtualMachineAdapter = new()
+                                {
+                                    Scripts = new() {
+                                        new ScriptEntry() {
+                                            Flags = ScriptEntry.Flag.Local,
+                                            Name = "DispelSustainedSpell",
+                                            Properties = new()
+                                            {
+                                                new ScriptObjectProperty()
+                                                {
+                                                    Flags = ScriptProperty.Flag.Edited,
+                                                    Name = "DispellSpell",
+                                                    Object = lastingSpell.ToLink()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+                            state.PatchMod.MagicEffects.Set(spelltoggleeffectoff);
+                            lastingSpell.Effects.Add(new Effect()
+                            {
+                                BaseEffect = spelltoggleeffectoff.ToNullableLink(),
+                                Data = new()
+                            });
+                        }
 
                         if (!lastingSpell.Flags.HasFlag(SpellDataFlag.ManualCostCalc))
                         {
