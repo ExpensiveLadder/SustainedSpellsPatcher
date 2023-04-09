@@ -1016,16 +1016,16 @@ namespace SustainedSpellsPatcher
 
                                 if (spellType != SpellArchetypeType.Summon && spellType != SpellArchetypeType.Reanimate && spellType != SpellArchetypeType.BoundWeapon)
                                 {
+                                    var spellConditionData = new HasSpellConditionData()
+                                    {
+                                        RunOnType = Condition.RunOnType.Subject
+                                    };
+                                    spellConditionData.Spell.SetTo(new FormLinkOrIndex<ISpellGetter>(spellConditionData, drainSpell.FormKey));
                                     lastingMagicEffect.Conditions.Add(new ConditionFloat()
                                     {
                                         CompareOperator = CompareOperator.EqualTo,
                                         ComparisonValue = 0,
-                                        Data = new FunctionConditionData()
-                                        {
-                                            Function = Condition.Function.HasSpell,
-                                            RunOnType = Condition.RunOnType.Subject,
-                                            ParameterOneRecord = drainSpell.ToLink()
-                                        }
+                                        Data = spellConditionData
                                     });
                                 }
 
@@ -1099,6 +1099,11 @@ namespace SustainedSpellsPatcher
 
                         if (spellType != SpellArchetypeType.Summon && spellType != SpellArchetypeType.Reanimate && spellType != SpellArchetypeType.BoundWeapon)
                         {
+                            var perkConditionData = new GetIsIDConditionData()
+                            {
+                                RunOnType = Condition.RunOnType.Subject
+                            };
+                            perkConditionData.Object.SetTo(new FormLinkOrIndex<ISpellGetter>(perkConditionData, lastingSpell.FormKey));
                             var toggleperk = new Perk(state.PatchMod, "SustainedTogglePerk_" + spell.EditorID)
                             {
                                 Name = "Bepis",
@@ -1125,12 +1130,7 @@ namespace SustainedSpellsPatcher
                                                     {
                                                         CompareOperator = CompareOperator.EqualTo,
                                                         ComparisonValue = 1,
-                                                        Data = new FunctionConditionData()
-                                                        {
-                                                            Function = Condition.Function.GetIsID,
-                                                            RunOnType = Condition.RunOnType.Subject,
-                                                            ParameterOneRecord = lastingSpell.ToLink()
-                                                        }
+                                                        Data = perkConditionData
                                                     }
                                                 }
                                             }
@@ -1141,6 +1141,11 @@ namespace SustainedSpellsPatcher
                             state.PatchMod.Perks.Set(toggleperk);
                             drainEffect.PerkToApply = toggleperk.ToLink();
 
+                            var spellConditionData = new HasSpellConditionData()
+                            {
+                                RunOnType = Condition.RunOnType.Subject
+                            };
+                            spellConditionData.Spell.SetTo(new FormLinkOrIndex<ISpellGetter>(spellConditionData, drainSpell.FormKey));
                             var spelltoggleeffectoff = new MagicEffect(state.PatchMod, "SustainedToggleOff_" + spell.EditorID)
                             {
                                 Archetype = new MagicEffectArchetype()
@@ -1158,12 +1163,7 @@ namespace SustainedSpellsPatcher
                                     {
                                         CompareOperator = CompareOperator.EqualTo,
                                         ComparisonValue = 1,
-                                        Data = new FunctionConditionData()
-                                        {
-                                            Function = Condition.Function.HasSpell,
-                                            RunOnType = Condition.RunOnType.Subject,
-                                            ParameterOneRecord = drainSpell.ToLink()
-                                        }
+                                        Data = spellConditionData
                                     }
                                 },
                                 VirtualMachineAdapter = new()
