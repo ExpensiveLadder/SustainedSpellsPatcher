@@ -97,7 +97,7 @@ namespace SustainedSpellsPatcher
                 SpellArchetypeType.FortifyHealth => Settings.Value.enableFortifyHealthSpells,
                 SpellArchetypeType.FortifyStamina => Settings.Value.enableFortifyStaminaSpells,
                 SpellArchetypeType.Evade => Settings.Value.enableEvadeSpells,
-                SpellArchetypeType.Regeneration => Settings.Value.enableReanimateSpells,
+                SpellArchetypeType.Regeneration => Settings.Value.enableRegenerationSpells,
                 _ => throw new NotImplementedException(),
             };
         }
