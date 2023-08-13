@@ -810,6 +810,7 @@ namespace SustainedSpellsPatcher
             {
                 if (bookGetter.Teaches is BookSpell spellGetter && spellGetter.Spell.TryResolve(state.LinkCache, out var spell))
                 {
+                    if (spell.Effects.Count == 0) continue;
                     if (blacklist.Contains(spell.ToLinkGetter())) continue;
                     var firstSpellEffect = spell.Effects[0];
                     if (firstSpellEffect.Data?.Duration < Settings.Value.minDuration || firstSpellEffect.Data?.Duration > Settings.Value.maxDuration) continue;
